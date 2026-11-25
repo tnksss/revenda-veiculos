@@ -311,8 +311,7 @@ class VehicleResource extends Resource
                             'is_featured' => false,
                         ]);
                     }),
-                        
-                    
+
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

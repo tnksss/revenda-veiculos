@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 use App\Enums\VehicleStatus;
 use App\Models\Vehicle;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
 
 test('normaliza placa para maiusculo sem hifen e gera slug unico automaticamente', function () {
     $vehicle = Vehicle::factory()->create([

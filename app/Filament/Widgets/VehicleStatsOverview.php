@@ -24,7 +24,7 @@ class VehicleStatsOverview extends BaseWidget
             VehicleStatus::Reserved,
         ])->sum('price');
 
-        $formattedStockValue = 'R$ ' . number_format($stockTotalValue, 2, ',', '.');
+        $formattedStockValue = 'R$ '.number_format($stockTotalValue, 2, ',', '.');
 
         return [
             Stat::make('Disponíveis na Vitrine', $availableCount)

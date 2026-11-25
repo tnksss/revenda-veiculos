@@ -1,7 +1,5 @@
 <?php
 
-
-
 declare(strict_types=1);
 
 namespace App\Models;
@@ -9,6 +7,8 @@ namespace App\Models;
 use App\Enums\FuelType;
 use App\Enums\TransmissionType;
 use App\Enums\VehicleStatus;
+use App\Observers\VehicleObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,8 +17,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use App\Observers\VehicleObserver;
-use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 
 #[ObservedBy([VehicleObserver::class])]
 class Vehicle extends Model
@@ -75,7 +73,7 @@ class Vehicle extends Model
 
             if (empty($vehicle->slug)) {
                 $baseSlug = Str::slug("{$vehicle->brand}-{$vehicle->model}-{$vehicle->version}-{$vehicle->year_model}");
-                $vehicle->slug = "{$baseSlug}-" . Str::lower(Str::random(5));
+                $vehicle->slug = "{$baseSlug}-".Str::lower(Str::random(5));
             }
         });
     }
