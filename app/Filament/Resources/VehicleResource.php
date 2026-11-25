@@ -306,16 +306,13 @@ class VehicleResource extends Resource
                     ->modalDescription('O veículo será removido da vitrine pública imediatamente e marcado como Vendido.')
                     ->visible(fn (Vehicle $record): bool => $record->status !== VehicleStatus::Sold)
                     ->action(function (Vehicle $record): void {
-                        $oldStatus = $record->status->getLabel();
-                        $record->update(['status' => VehicleStatus::Sold, 'is_featured' => false]);
-                        $record->logs()->create([
-                            'user_id' => auth()->id(),
-                            'action' => 'status_changed',
-                            'old_value' => $oldStatus,
-                            'new_value' => VehicleStatus::Sold->getLabel(),
-                            'notes' => 'Marcado como vendido pela listagem rápida.',
+                        $record->update([
+                            'status' => VehicleStatus::Sold,
+                            'is_featured' => false,
                         ]);
                     }),
+                        
+                    
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

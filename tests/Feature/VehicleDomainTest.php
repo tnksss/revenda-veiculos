@@ -51,3 +51,29 @@ test('escopo publiclyVisible exibe apenas veiculos disponiveis e reservados', fu
         ->not->toContain($preparation->id)
         ->not->toContain($sold->id);
 });
+
+test('observer registra log automatico ao alterar status ou preco do veiculo', function (): void {
+    $vehicle = Vehicle::factory()->create([
+        'status' => VehicleStatus::Preparation,
+        'price' => 95000.00,
+    ]);
+
+    $vehicle->update([
+        'status' => VehicleStatus::Available,
+        'price' => 92500.00,
+    ]);
+
+    $this->assertDatabaseHas('vehicle_logs', [
+        'vehicle_id' => $vehicle->id,
+        'action' => 'status_changed',
+        'old_value' => 'Em Preparação',
+        'new_value' => 'Disponível',
+    ]);
+
+    $this->assertDatabaseHas('vehicle_logs', [
+        'vehicle_id' => $vehicle->id,
+        'action' => 'price_updated',
+        'old_value' => 'R$ 95.000,00',
+        'new_value' => 'R$ 92.500,00',
+    ]);
+});
