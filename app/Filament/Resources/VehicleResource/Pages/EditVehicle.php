@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources\VehicleResource\Pages;
 
 use App\Filament\Resources\VehicleResource;
@@ -14,6 +16,14 @@ class EditVehicle extends EditRecord
     {
         return [
             Actions\DeleteAction::make(),
+            Actions\RestoreAction::make(),
         ];
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['plate'] = $this->record->plate;
+
+        return $data;
     }
 }
