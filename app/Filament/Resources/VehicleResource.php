@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Actions\Vehicles\MarkVehicleAsSoldAction;
 use App\Enums\FuelType;
 use App\Enums\TransmissionType;
 use App\Enums\VehicleStatus;
@@ -306,13 +307,7 @@ class VehicleResource extends Resource
                     ->modalHeading('Confirmar venda do veículo?')
                     ->modalDescription('O veículo será removido da vitrine pública imediatamente e marcado como Vendido.')
                     ->visible(fn (Vehicle $record): bool => $record->status !== VehicleStatus::Sold)
-                    ->action(function (Vehicle $record): void {
-                        $record->update([
-                            'status' => VehicleStatus::Sold,
-                            'is_featured' => false,
-                        ]);
-                    }),
-
+                    ->action(fn (Vehicle $record, MarkVehicleAsSoldAction $markAsSold): Vehicle => $markAsSold->execute($record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
