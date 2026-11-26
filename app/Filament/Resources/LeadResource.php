@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Actions\Reports\ExportLeadsCsvAction;
 use App\Enums\LeadStatus;
 use App\Filament\Resources\LeadResource\Pages;
 use App\Models\Lead;
@@ -177,6 +178,18 @@ class LeadResource extends Resource
                     ->label('Meus atendimentos')
                     ->query(fn (Builder $query): Builder => $query->where('assigned_to', auth()->id())),
             ])
+            ->headerActions([
+                Tables\Actions\Action::make('exportCsv')
+                    ->label('Exportar Leads (CSV)')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->action(function (Tables\Contracts\HasTable $livewire) {
+                        /** @var Builder<Lead> $query */
+                        $query = $livewire->getFilteredTableQuery();
+
+                        return app(ExportLeadsCsvAction::class)->execute($query);
+                    }),
+            ])
             ->actions([
                 Tables\Actions\Action::make('claim')
                     ->label('Assumir')
@@ -212,6 +225,14 @@ class LeadResource extends Resource
                             return $user?->isAdmin() ?? false;
                         }),
                 ]),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('exportCsv')
+                    ->label('Exportar CSV')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->action(fn (Tables\Contracts\HasTable $livewire) => app(ExportLeadsCsvAction::class)
+                        ->execute($livewire->getFilteredTableQuery())),
             ]);
     }
 

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Actions\Reports\ExportVehiclesCsvAction;
 use App\Actions\Vehicles\MarkVehicleAsSoldAction;
 use App\Enums\FuelType;
 use App\Enums\TransmissionType;
 use App\Enums\VehicleStatus;
 use App\Filament\Resources\VehicleResource\Pages;
+use App\Models\User;
 use App\Models\Vehicle;
 use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -284,7 +286,28 @@ class VehicleResource extends Resource
                 Tables\Filters\TrashedFilter::make()
                     ->label('Excluídos'),
             ])
+            ->headerActions([
+                Tables\Actions\Action::make('exportCsv')
+                    ->label('Exportar Estoque (CSV)')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->action(function (Tables\Contracts\HasTable $livewire) {
+                        /** @var Builder<Vehicle> $query */
+                        $query = $livewire->getFilteredTableQuery();
+                        /** @var User|null $user */
+                        $user = auth()->user();
+
+                        return app(ExportVehiclesCsvAction::class)->execute($query, $user);
+                    }),
+            ])
             ->actions([
+                Tables\Actions\Action::make('printSheet')
+                    ->label('Ficha')
+                    ->tooltip('Ficha de Pátio (A4 / PDF)')
+                    ->icon('heroicon-o-printer')
+                    ->color('info')
+                    ->url(fn (Vehicle $record): string => route('admin.vehicles.print-sheet', $record), shouldOpenInNewTab: true),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('marcarVendido')
                     ->label('Vendido')
