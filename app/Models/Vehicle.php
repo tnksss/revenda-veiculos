@@ -123,4 +123,9 @@ class Vehicle extends Model
             VehicleStatus::Reserved->value,
         ]);
     }
+
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
 }

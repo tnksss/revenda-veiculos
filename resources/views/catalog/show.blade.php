@@ -1,4 +1,4 @@
-
+cat << 'EOF' > resources/views/catalog/show.blade.php
 @extends('layouts.public')
 
 @section('title', "{$vehicle->brand} {$vehicle->model} {$vehicle->year_model} • AutoPrime Seminovos")
@@ -117,11 +117,144 @@
                        target="_blank"
                        rel="noopener noreferrer"
                        class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-5 rounded-xl transition shadow-sm">
-                        <span>Tenho Interesse (WhatsApp)</span>
+                        <span>Chamar Agora no WhatsApp</span>
                     </a>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-slate-200">
+                    <h2 class="text-sm font-bold text-slate-900">Prefere enviar uma proposta ou simular financiamento?</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Preencha abaixo e retornamos com as condições.</p>
+
+                    @if(session('lead_success'))
+                        <div class="mt-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold p-3.5 rounded-xl">
+                            {{ session('lead_success') }}
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('catalog.leads.store', $vehicle->slug) }}" class="mt-4 space-y-3">
+                        @csrf
+
+                        <div class="hidden" aria-hidden="true">
+                            <label for="website">Website</label>
+                            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+                        </div>
+
+                        <div>
+                            <input type="text" name="name" value="{{ old('name') }}" required placeholder="Seu nome completo *"
+                                   class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            @error('name')
+                                <span class="text-xs text-red-600 mt-0.5 block">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <input type="text" name="phone" value="{{ old('phone') }}" required placeholder="WhatsApp / Telefone *"
+                                   class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            @error('phone')
+                                <span class="text-xs text-red-600 mt-0.5 block">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <input type="email" name="email" value="{{ old('email') }}" placeholder="E-mail (opcional)"
+                                   class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            @error('email')
+                                <span class="text-xs text-red-600 mt-0.5 block">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="flex flex-col gap-2 pt-1 text-xs text-slate-700">
+                            <label class="inline-flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="wants_financing" value="1" @checked(old('wants_financing')) class="rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                                <span>Quero simular financiamento</span>
+                            </label>
+                            <label class="inline-flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="has_trade_in" value="1" @checked(old('has_trade_in')) class="rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                                <span>Tenho veículo na troca</span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <textarea name="message" rows="2" placeholder="Observações ou proposta (opcional)"
+                                      class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">{{ old('message') }}</textarea>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full bg-slate-900 hover:bg-amber-500 hover:text-slate-950 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition cursor-pointer">
+                            Enviar Proposta
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+@if($relatedVehicles->isNotEmpty())
+        <section class="mt-16 pt-12 border-t border-slate-200">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">Outros veículos em destaque</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Opções selecionadas disponíveis em nosso estoque.</p>
+                </div>
+
+                <a href="{{ route('catalog.index') }}" class="text-xs sm:text-sm font-bold text-amber-600 hover:text-amber-700 transition">
+                    Ver estoque completo &rarr;
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach($relatedVehicles as $related)
+                    <article class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col">
+                        <a href="{{ route('catalog.show', $related->slug) }}" class="relative block aspect-[16/10] bg-slate-200 overflow-hidden">
+                            @if($related->coverPhoto)
+                                <img src="{{ asset('storage/' . $related->coverPhoto->path) }}"
+                                     alt="{{ $related->brand }} {{ $related->model }}"
+                                     class="w-full h-full object-cover hover:scale-105 transition duration-300">
+                            @else
+                                <div class="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+                                    Sem foto de capa
+                                </div>
+                            @endif
+
+                            @if($related->status === \App\Enums\VehicleStatus::Reserved)
+                                <span class="absolute top-3 left-3 bg-sky-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">
+                                    Reservado
+                                </span>
+                            @endif
+
+                            <span class="absolute bottom-3 right-3 bg-slate-900/80 text-white text-xs px-2.5 py-1 rounded-md backdrop-blur-sm">
+                                Final {{ $related->plate_ending }}
+                            </span>
+                        </a>
+
+                        <div class="p-5 flex-1 flex flex-col justify-between">
+                            <div>
+                                <span class="text-xs font-semibold text-amber-600 uppercase tracking-wider">
+                                    {{ $related->brand }}
+                                </span>
+                                <h3 class="text-base font-bold text-slate-900 mt-0.5">
+                                    <a href="{{ route('catalog.show', $related->slug) }}" class="hover:text-amber-600 transition">
+                                        {{ $related->model }}
+                                    </a>
+                                </h3>
+                                <p class="text-xs text-slate-500 line-clamp-1 mt-0.5">{{ $related->version }}</p>
+                            </div>
+
+                            <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-lg font-extrabold text-slate-900">
+                                    R$ {{ number_format((float) $related->price, 2, ',', '.') }}
+                                </span>
+
+                                <a href="{{ route('catalog.show', $related->slug) }}"
+                                   class="text-xs font-bold text-slate-900 hover:text-amber-600 transition">
+                                    Detalhes &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+        </section>
+    @endif
 @endsection
+EOF
