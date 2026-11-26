@@ -114,4 +114,19 @@ class VehicleFactory extends Factory
             'is_featured' => false,
         ]);
     }
+
+    public function reserved(): static
+    {
+        return $this->state(fn (): array => [
+            'status' => VehicleStatus::Reserved,
+        ]);
+    }
+
+    public function sold(): static
+    {
+        return $this->state(fn (): array => [
+            'status' => VehicleStatus::Sold,
+            'is_featured' => false,
+        ]);
+    }
 }
