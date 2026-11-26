@@ -221,7 +221,8 @@ class VehicleResource extends Resource
                                             ->label('Preço de Custo / Aquisição (R$)')
                                             ->numeric()
                                             ->prefix('R$')
-                                            ->step(0.01),
+                                            ->step(0.01)
+                                            ->visible(fn (): bool => auth()->user()?->isAdmin() ?? false),
 
                                         Forms\Components\Textarea::make('internal_notes')
                                             ->label('Observações Internas (Pátio / Reparos / Procedência)')

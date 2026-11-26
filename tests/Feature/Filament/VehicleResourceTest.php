@@ -128,3 +128,13 @@ test('acao rapida marcarVendido atualiza status, remove destaque e registra hist
         'new_value' => 'Vendido',
     ]);
 });
+test('vendedor nao consegue visualizar campo de preco de custo nem excluir veiculos', function (): void {
+    $seller = User::factory()->seller()->create();
+    $vehicle = Vehicle::factory()->create();
+
+    $this->actingAs($seller);
+
+    Livewire::test(EditVehicle::class, ['record' => $vehicle->getRouteKey()])
+        ->assertFormFieldIsHidden('cost_price')
+        ->assertActionHidden('delete');
+});
