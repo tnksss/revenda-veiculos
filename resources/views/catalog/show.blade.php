@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', "{$vehicle->brand} {$vehicle->model} {$vehicle->year_model} • AutoPrime Seminovos")
+@section('title', "{$vehicle->brand} {$vehicle->model} {$vehicle->year_model} • TOBIAS VEÍCULOS")
 @section('description', "{$vehicle->brand} {$vehicle->model} {$vehicle->version} ({$vehicle->year_manufacture}/{$vehicle->year_model}), {$vehicle->transmission->getLabel()}, {$vehicle->fuel_type->getLabel()}, com " . number_format($vehicle->mileage, 0, ',', '.') . " km por R$ " . number_format((float) $vehicle->price, 2, ',', '.') . ".")
 
 @section('meta')
@@ -11,7 +11,7 @@
         $ogDescription = "{$vehicle->version} • " . number_format($vehicle->mileage, 0, ',', '.') . " km • {$vehicle->transmission->getLabel()} • {$vehicle->fuel_type->getLabel()}";
     @endphp
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="AutoPrime Seminovos">
+    <meta property="og:site_name" content="TOBIAS VEÍCULOS">
     <meta property="og:title" content="{{ $ogTitle }}">
     <meta property="og:description" content="{{ $ogDescription }}">
     <meta property="og:url" content="{{ route('catalog.show', $vehicle->slug) }}">

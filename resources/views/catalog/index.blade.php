@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', 'Estoque de Veículos • AutoPrime Seminovos')
+@section('title', 'Estoque de Veículos • TOBIAS VEÍCULOS')
 
 @section('content')
 <section class="bg-slate-900 text-white py-10 border-b border-slate-800">

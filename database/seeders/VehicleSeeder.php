@@ -59,7 +59,7 @@ class VehicleSeeder extends Seeder
 
         imagefilledrectangle($img, 80, 340, 1200, 346, $accent);
         imagestring($img, 5, 80, 300, strtoupper($label), $textColor);
-        imagestring($img, 4, 80, 370, 'AUTO PRIME SEMINOVOS - ESTOQUE DEMONSTRACAO', $accent);
+        imagestring($img, 4, 80, 370, 'TOBIAS VEÍCULOS - ESTOQUE DEMONSTRACAO', $accent);
 
         $tempPath = tempnam(sys_get_temp_dir(), 'car_').'.jpg';
         imagejpeg($img, $tempPath, 88);
