@@ -7,11 +7,14 @@ namespace App\Filament\Resources;
 use App\Enums\LeadStatus;
 use App\Filament\Resources\LeadResource\Pages;
 use App\Models\Lead;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class LeadResource extends Resource
 {
@@ -76,7 +79,21 @@ class LeadResource extends Resource
 
                         Forms\Components\Select::make('assigned_to')
                             ->label('Consultor Responsável')
-                            ->relationship('assignedUser', 'name')
+                            ->relationship(
+                                name: 'assignedUser',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn (Builder $query): Builder => $query->where('is_active', true),
+                            )
+                            ->disabled(function (?Lead $record): bool {
+                                /** @var User|null $user */
+                                $user = auth()->user();
+
+                                if ($user === null || $user->isAdmin()) {
+                                    return false;
+                                }
+
+                                return $record !== null && $record->assigned_to !== null && $record->assigned_to !== $user->id;
+                            })
                             ->searchable()
                             ->preload(),
 
@@ -139,7 +156,9 @@ class LeadResource extends Resource
 
                 Tables\Columns\TextColumn::make('assignedUser.name')
                     ->label('Consultor')
-                    ->placeholder('Não atribuído'),
+                    ->placeholder('Não atribuído')
+                    ->badge()
+                    ->color(fn (?string $state): string => $state !== null ? 'info' : 'gray'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -149,8 +168,32 @@ class LeadResource extends Resource
                 Tables\Filters\SelectFilter::make('assigned_to')
                     ->label('Consultor')
                     ->relationship('assignedUser', 'name'),
+
+                Tables\Filters\Filter::make('unassigned')
+                    ->label('Sem consultor')
+                    ->query(fn (Builder $query): Builder => $query->whereNull('assigned_to')),
+
+                Tables\Filters\Filter::make('mine')
+                    ->label('Meus atendimentos')
+                    ->query(fn (Builder $query): Builder => $query->where('assigned_to', auth()->id())),
             ])
             ->actions([
+                Tables\Actions\Action::make('claim')
+                    ->label('Assumir')
+                    ->icon('heroicon-o-hand-raised')
+                    ->color('info')
+                    ->visible(fn (Lead $record): bool => $record->assigned_to === null)
+                    ->action(function (Lead $record): void {
+                        $record->update([
+                            'assigned_to' => auth()->id(),
+                        ]);
+
+                        Notification::make()
+                            ->title('Atendimento assumido com sucesso!')
+                            ->success()
+                            ->send();
+                    }),
+
                 Tables\Actions\Action::make('whatsapp')
                     ->label('WhatsApp')
                     ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
@@ -162,7 +205,12 @@ class LeadResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn (): bool => auth()->user()?->isAdmin() ?? false),
+                        ->visible(function (): bool {
+                            /** @var User|null $user */
+                            $user = auth()->user();
+
+                            return $user?->isAdmin() ?? false;
+                        }),
                 ]),
             ]);
     }

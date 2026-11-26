@@ -13,14 +13,25 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        if (User::count() === 0) {
-            User::factory()->create([
+        User::query()->firstOrCreate(
+            ['email' => 'admin@revenda.test'],
+            [
                 'name' => 'Administrador Loja',
-                'email' => 'admin@revenda.test',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Admin,
-            ]);
-        }
+                'is_active' => true,
+            ],
+        );
+
+        User::query()->firstOrCreate(
+            ['email' => 'vendedor@revenda.test'],
+            [
+                'name' => 'Consultor de Vendas',
+                'password' => Hash::make('password'),
+                'role' => UserRole::Seller,
+                'is_active' => true,
+            ],
+        );
 
         $this->call([
             VehicleSeeder::class,
