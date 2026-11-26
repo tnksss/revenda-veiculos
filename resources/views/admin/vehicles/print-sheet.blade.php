@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ficha de Pátio - {{ $vehicle->brand }} {{ $vehicle->model }} | Tobias Veículos</title>
-    @vite(['resources/css/app.css'])
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        @vite(['resources/css/app.css'])
+    @else
+        <script src="https://cdn.tailwindcss.com"></script>
+    @endif
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <style>
         @media print {
             @page { size: A4 portrait; margin: 12mm; }
@@ -15,17 +20,17 @@
 </head>
 <body class="bg-slate-100 text-slate-900 antialiased">
     <div class="no-print bg-slate-900 text-white py-3 px-6 flex items-center justify-between">
-        <span class="text-sm font-medium">Pré-visualização da Ficha de Pátio (A4)</span>
+        <span class="text-sm font-medium">Pré-visualização da Ficha de Pátio (A4 — Modo Economia de Toner)</span>
         <button type="button" onclick="window.print()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm px-4 py-2 rounded-lg cursor-pointer">
             Imprimir / Salvar PDF
         </button>
     </div>
 
-    <main class="max-w-3xl mx-auto my-6 bg-white border-2 border-slate-900 rounded-2xl p-8 shadow-sm print:my-0 print:shadow-none">
-        <header class="flex items-center justify-between border-b-2 border-slate-900 pb-5">
+    <main class="max-w-3xl mx-auto my-6 bg-white border-2 border-slate-800 rounded-2xl p-8 shadow-sm print:my-0 print:shadow-none">
+        <header class="flex items-center justify-between border-b-2 border-slate-800 pb-5">
             <div>
-                <div class="inline-flex items-center gap-2 bg-slate-900 text-white px-3 py-1 rounded-md text-xs font-extrabold tracking-wider">
-                    <span class="text-amber-400">TOBIAS</span> VEÍCULOS
+                <div class="inline-flex items-center gap-1.5 border-2 border-slate-900 text-slate-900 px-3 py-1 rounded-md text-xs font-extrabold tracking-wider">
+                    <span class="text-amber-600">TOBIAS</span> VEÍCULOS
                 </div>
                 <p class="text-xs text-slate-500 mt-1.5">Seminovos selecionados com procedência e garantia</p>
             </div>
@@ -43,32 +48,32 @@
             @endif
         </section>
 
-        <section class="mt-6 bg-slate-900 text-white rounded-xl p-6 flex items-center justify-between">
+        <section class="mt-6 bg-slate-50 border border-slate-300 border-l-8 border-l-amber-500 rounded-xl p-6 flex items-center justify-between">
             <div>
-                <span class="text-xs uppercase tracking-wider text-slate-300 block">Valor à Vista</span>
-                <span class="text-4xl font-black text-amber-400">R$ {{ number_format((float) $vehicle->price, 2, ',', '.') }}</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500 block">Valor à Vista</span>
+                <span class="text-4xl font-black text-slate-900">R$ {{ number_format((float) $vehicle->price, 2, ',', '.') }}</span>
             </div>
-            <div class="text-right text-xs text-slate-300 max-w-xs">
+            <div class="text-right text-xs text-slate-600 max-w-xs">
                 Consulte condições especiais de financiamento e avaliação do seu usado na troca.
             </div>
         </section>
 
         <section class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-            <div class="border border-slate-200 rounded-xl p-3.5">
+            <div class="border border-slate-300 rounded-xl p-3.5">
                 <span class="text-xs text-slate-500 block">Ano Fab./Mod.</span>
-                <strong class="text-base font-bold">{{ $vehicle->year_manufacture }}/{{ $vehicle->year_model }}</strong>
+                <strong class="text-base font-bold text-slate-900">{{ $vehicle->year_manufacture }}/{{ $vehicle->year_model }}</strong>
             </div>
-            <div class="border border-slate-200 rounded-xl p-3.5">
+            <div class="border border-slate-300 rounded-xl p-3.5">
                 <span class="text-xs text-slate-500 block">Quilometragem</span>
-                <strong class="text-base font-bold">{{ number_format($vehicle->mileage, 0, ',', '.') }} km</strong>
+                <strong class="text-base font-bold text-slate-900">{{ number_format($vehicle->mileage, 0, ',', '.') }} km</strong>
             </div>
-            <div class="border border-slate-200 rounded-xl p-3.5">
+            <div class="border border-slate-300 rounded-xl p-3.5">
                 <span class="text-xs text-slate-500 block">Câmbio</span>
-                <strong class="text-base font-bold">{{ $vehicle->transmission->getLabel() }}</strong>
+                <strong class="text-base font-bold text-slate-900">{{ $vehicle->transmission->getLabel() }}</strong>
             </div>
-            <div class="border border-slate-200 rounded-xl p-3.5">
+            <div class="border border-slate-300 rounded-xl p-3.5">
                 <span class="text-xs text-slate-500 block">Combustível</span>
-                <strong class="text-base font-bold">{{ $vehicle->fuel_type->getLabel() }}</strong>
+                <strong class="text-base font-bold text-slate-900">{{ $vehicle->fuel_type->getLabel() }}</strong>
             </div>
         </section>
 
@@ -85,10 +90,27 @@
             </section>
         @endif
 
-        <footer class="mt-8 pt-4 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-            <span>Veja mais fotos e detalhes online:</span>
-            <span class="font-mono font-semibold text-slate-800">{{ $publicUrl }}</span>
+        <footer class="mt-8 pt-5 border-t border-slate-300 flex items-center justify-between gap-6">
+            <div class="space-y-1">
+                <p class="text-sm font-bold text-slate-900">Aponte a câmera do celular para o QR Code</p>
+                <p class="text-xs text-slate-600">Veja a galeria completa de fotos, detalhes e envie sua proposta online:</p>
+                <p class="font-mono text-xs font-semibold text-slate-800 pt-1 break-all">{{ $publicUrl }}</p>
+            </div>
+            <div class="shrink-0 p-2 bg-white border border-slate-300 rounded-xl">
+                <div id="vehicle-qrcode" aria-label="QR Code para ver mais fotos do veículo"></div>
+            </div>
         </footer>
     </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof qrcode === 'function') {
+                var qr = qrcode(0, 'M');
+                qr.addData(@json($publicUrl));
+                qr.make();
+                document.getElementById('vehicle-qrcode').innerHTML = qr.createSvgTag({ cellSize: 3, margin: 0, scalable: false });
+            }
+        });
+    </script>
 </body>
 </html>
