@@ -18,6 +18,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+/**
+ * @property VehicleStatus $status
+ * @property FuelType $fuel_type
+ * @property TransmissionType $transmission
+ * @property bool $is_featured
+ * @property string $plate
+ * @property-read string $plate_ending
+ * @property-read string $full_title
+ */
 #[ObservedBy([VehicleObserver::class])]
 class Vehicle extends Model
 {

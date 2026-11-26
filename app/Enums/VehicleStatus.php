@@ -24,7 +24,7 @@ enum VehicleStatus: string implements HasColor, HasLabel
         };
     }
 
-    public function getColor(): string|array|null
+    public function getColor(): string
     {
         return match ($this) {
             self::Preparation => 'warning',

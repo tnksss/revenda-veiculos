@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\VehicleResource\Pages;
 
 use App\Filament\Resources\VehicleResource;
+use App\Models\Vehicle;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -22,7 +23,9 @@ class EditVehicle extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $data['plate'] = $this->record->plate;
+        if ($this->record instanceof Vehicle) {
+            $data['plate'] = $this->record->plate;
+        }
 
         return $data;
     }
