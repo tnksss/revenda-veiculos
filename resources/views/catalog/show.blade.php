@@ -5,9 +5,8 @@
 
 @section('meta')
     @php
-        $ogPhoto = $vehicle->photos->first()?->path
-            ? asset('storage/' . $vehicle->photos->first()->path)
-            : null;
+        $galleryMedia = $vehicle->getMedia('gallery');
+        $ogPhoto = $galleryMedia->first()?->getUrl('large');
         $ogTitle = "{$vehicle->brand} {$vehicle->model} {$vehicle->year_manufacture}/{$vehicle->year_model} • R$ " . number_format((float) $vehicle->price, 2, ',', '.');
         $ogDescription = "{$vehicle->version} • " . number_format($vehicle->mileage, 0, ',', '.') . " km • {$vehicle->transmission->getLabel()} • {$vehicle->fuel_type->getLabel()}";
     @endphp
@@ -40,7 +39,7 @@
                 'value' => $vehicle->mileage,
                 'unitCode' => 'KMT',
             ],
-            'image' => $vehicle->photos->map(fn ($photo): string => asset('storage/' . $photo->path))->values()->all(),
+            'image' => $galleryMedia->map(fn ($media): string => $media->getUrl('large'))->values()->all(),
             'offers' => [
                 '@type' => 'Offer',
                 'priceCurrency' => 'BRL',
@@ -57,7 +56,7 @@
 
 @section('content')
 @php
-    $firstPhoto = $vehicle->photos->first()?->path;
+    $firstPhoto = $galleryMedia->first()?->getUrl('large');
     $whatsappMessage = urlencode("Olá! Tenho interesse no {$vehicle->brand} {$vehicle->model} ({$vehicle->year_manufacture}/{$vehicle->year_model}) anunciado no site.");
 @endphp
 
@@ -69,10 +68,39 @@
     </nav>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div class="lg:col-span-7" x-data="{ activePhoto: '{{ $firstPhoto ? asset('storage/' . $firstPhoto) : '' }}' }">
-            <div class="aspect-[16/10] bg-slate-200 rounded-2xl overflow-hidden border border-slate-200">
+        @php
+            $galleryUrls = $galleryMedia->map(fn ($media): string => $media->getUrl('large'))->values()->all();
+        @endphp
+        <div class="lg:col-span-7"
+             x-data="{
+                 photos: @js($galleryUrls),
+                 activeIndex: 0,
+                 lightboxOpen: false,
+                 get activePhoto() {
+                     return this.photos[this.activeIndex] ?? '';
+                 },
+                 next() {
+                     if (this.photos.length > 0) {
+                         this.activeIndex = (this.activeIndex + 1) % this.photos.length;
+                     }
+                 },
+                 prev() {
+                     if (this.photos.length > 0) {
+                         this.activeIndex = (this.activeIndex - 1 + this.photos.length) % this.photos.length;
+                     }
+                 }
+             }"
+             @keydown.escape.window="lightboxOpen = false"
+             @keydown.arrow-right.window="if (lightboxOpen) next()"
+             @keydown.arrow-left.window="if (lightboxOpen) prev()">
+            <div class="relative group aspect-[16/10] bg-slate-200 rounded-2xl overflow-hidden border border-slate-200">
                 <template x-if="activePhoto">
-                    <img :src="activePhoto" alt="{{ $vehicle->brand }} {{ $vehicle->model }}" class="w-full h-full object-cover">
+                    <div @click="lightboxOpen = true" class="w-full h-full cursor-zoom-in relative">
+                        <img :src="activePhoto" alt="{{ $vehicle->brand }} {{ $vehicle->model }}" class="w-full h-full object-cover transition duration-300 group-hover:scale-[1.01]">
+                        <span class="absolute bottom-3 right-3 bg-slate-900/75 text-white text-xs font-medium px-3 py-1.5 rounded-lg backdrop-blur-sm opacity-90 group-hover:opacity-100 transition">
+                            Ampliar foto
+                        </span>
+                    </div>
                 </template>
                 <template x-if="!activePhoto">
                     <div class="w-full h-full flex items-center justify-center text-slate-400">
@@ -81,18 +109,57 @@
                 </template>
             </div>
 
-            @if($vehicle->photos->count() > 1)
+            @if($galleryMedia->count() > 1)
                 <div class="grid grid-cols-4 sm:grid-cols-6 gap-3 mt-4">
-                    @foreach($vehicle->photos as $photo)
+                    @foreach($galleryMedia as $index => $media)
                         <button type="button"
-                                @click="activePhoto = '{{ asset('storage/' . $photo->path) }}'"
-                                :class="activePhoto === '{{ asset('storage/' . $photo->path) }}' ? 'ring-2 ring-amber-500' : 'opacity-75 hover:opacity-100'"
+                                @click="activeIndex = {{ $index }}"
+                                :class="activeIndex === {{ $index }} ? 'ring-2 ring-amber-500' : 'opacity-75 hover:opacity-100'"
                                 class="aspect-[16/10] rounded-lg overflow-hidden bg-slate-200 border border-slate-200 transition cursor-pointer">
-                            <img src="{{ asset('storage/' . $photo->path) }}" alt="Miniatura" class="w-full h-full object-cover">
+                            <img src="{{ $media->getUrl('thumb') }}" alt="Miniatura {{ $index + 1 }}" class="w-full h-full object-cover">
                         </button>
                     @endforeach
                 </div>
             @endif
+
+            {{-- Lightbox Modal em Tela Cheia --}}
+            <div x-show="lightboxOpen"
+                 x-cloak
+                 x-transition.opacity
+                 @click.self="lightboxOpen = false"
+                 class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8">
+                <button type="button"
+                        @click="lightboxOpen = false"
+                        aria-label="Fechar visualização"
+                        class="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold transition cursor-pointer">
+                    &times;
+                </button>
+
+                <template x-if="photos.length > 1">
+                    <button type="button"
+                            @click.stop="prev()"
+                            aria-label="Foto anterior"
+                            class="absolute left-3 sm:left-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full w-11 h-11 flex items-center justify-center text-2xl font-bold transition cursor-pointer">
+                        &#8249;
+                    </button>
+                </template>
+
+                <div class="max-w-5xl max-h-[85vh] flex flex-col items-center">
+                    <img :src="activePhoto"
+                         alt="{{ $vehicle->brand }} {{ $vehicle->model }}"
+                         class="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl">
+                    <div class="mt-3 text-xs text-slate-300 font-medium" x-text="(activeIndex + 1) + ' / ' + photos.length"></div>
+                </div>
+
+                <template x-if="photos.length > 1">
+                    <button type="button"
+                            @click.stop="next()"
+                            aria-label="Próxima foto"
+                            class="absolute right-3 sm:right-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full w-11 h-11 flex items-center justify-center text-2xl font-bold transition cursor-pointer">
+                        &#8250;
+                    </button>
+                </template>
+            </div>
 
             @if($vehicle->description)
                 <div class="bg-white rounded-2xl border border-slate-200 p-6 mt-6">

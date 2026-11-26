@@ -92,8 +92,8 @@
             @foreach($vehicles as $vehicle)
                 <article class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col">
                     <a href="{{ route('catalog.show', $vehicle->slug) }}" class="relative block aspect-[16/10] bg-slate-200 overflow-hidden">
-                        @if($vehicle->coverPhoto)
-                            <img src="{{ asset('storage/' . $vehicle->coverPhoto->path) }}"
+                        @if($vehicle->cover_url)
+                            <img src="{{ $vehicle->cover_url }}"
                                  alt="{{ $vehicle->brand }} {{ $vehicle->model }}"
                                  class="w-full h-full object-cover hover:scale-105 transition duration-300">
                         @else

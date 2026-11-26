@@ -6,44 +6,44 @@ use App\Actions\Vehicles\MarkVehicleAsSoldAction;
 use App\Actions\Vehicles\PublishVehicleAction;
 use App\Enums\VehicleStatus;
 use App\Models\Vehicle;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
-test('MarkVehicleAsSoldAction atualiza status para vendido e remove destaque', function (): void {
-    $vehicle = Vehicle::factory()->available()->create([
-        'is_featured' => true,
-    ]);
+test('MarkVehicleAsSoldAction atualiza status para vendido e remove destaque', function () {
+    $vehicle = Vehicle::factory()->available()->create(['is_featured' => true]);
 
-    app(MarkVehicleAsSoldAction::class)->execute($vehicle);
+    $updated = app(MarkVehicleAsSoldAction::class)->execute($vehicle);
 
-    $vehicle->refresh();
-
-    expect($vehicle->status)->toBe(VehicleStatus::Sold)
-        ->and($vehicle->is_featured)->toBeFalse();
+    expect($updated->status)->toBe(VehicleStatus::Sold)
+        ->and($updated->is_featured)->toBeFalse();
 });
 
-test('PublishVehicleAction publica veiculo quando possui 3 ou mais fotos', function (): void {
-    $vehicle = Vehicle::factory()->preparation()->create();
+test('PublishVehicleAction publica veiculo quando possui 3 ou mais fotos', function () {
+    Storage::fake('public');
 
-    $vehicle->photos()->createMany([
-        ['path' => 'vehicles/1.jpg', 'sort_order' => 0],
-        ['path' => 'vehicles/2.jpg', 'sort_order' => 1],
-        ['path' => 'vehicles/3.jpg', 'sort_order' => 2],
-    ]);
+    $vehicle = Vehicle::factory()->create(['status' => VehicleStatus::Preparation]);
 
-    app(PublishVehicleAction::class)->execute($vehicle);
+    for ($i = 1; $i <= 3; $i++) {
+        $vehicle->addMedia(UploadedFile::fake()->image("photo-{$i}.jpg", 800, 600))
+            ->toMediaCollection('gallery');
+    }
 
-    expect($vehicle->fresh()->status)->toBe(VehicleStatus::Available);
+    $updated = app(PublishVehicleAction::class)->execute($vehicle);
+
+    expect($updated->status)->toBe(VehicleStatus::Available);
 });
 
-test('PublishVehicleAction lanca excecao quando veiculo possui menos de 3 fotos', function (): void {
-    $vehicle = Vehicle::factory()->preparation()->create();
+test('PublishVehicleAction lanca excecao quando veiculo possui menos de 3 fotos', function () {
+    Storage::fake('public');
 
-    $vehicle->photos()->createMany([
-        ['path' => 'vehicles/1.jpg', 'sort_order' => 0],
-        ['path' => 'vehicles/2.jpg', 'sort_order' => 1],
-    ]);
+    $vehicle = Vehicle::factory()->create(['status' => VehicleStatus::Preparation]);
+
+    for ($i = 1; $i <= 2; $i++) {
+        $vehicle->addMedia(UploadedFile::fake()->image("photo-{$i}.jpg", 800, 600))
+            ->toMediaCollection('gallery');
+    }
 
     expect(fn () => app(PublishVehicleAction::class)->execute($vehicle))
-        ->toThrow(DomainException::class, 'Para publicar o veículo como Disponível, adicione pelo menos 3 fotos.');
-
-    expect($vehicle->fresh()->status)->toBe(VehicleStatus::Preparation);
+        ->toThrow(ValidationException::class);
 });

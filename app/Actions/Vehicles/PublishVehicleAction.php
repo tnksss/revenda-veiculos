@@ -6,20 +6,22 @@ namespace App\Actions\Vehicles;
 
 use App\Enums\VehicleStatus;
 use App\Models\Vehicle;
-use DomainException;
+use Illuminate\Validation\ValidationException;
 
-final readonly class PublishVehicleAction
+final class PublishVehicleAction
 {
     public function execute(Vehicle $vehicle): Vehicle
     {
-        if ($vehicle->photos()->count() < 3) {
-            throw new DomainException('Para publicar o veículo como Disponível, adicione pelo menos 3 fotos.');
+        if ($vehicle->getMedia('gallery')->count() < 3) {
+            throw ValidationException::withMessages([
+                'status' => 'O veículo precisa ter pelo menos 3 fotos na galeria para ser publicado.',
+            ]);
         }
 
         $vehicle->update([
             'status' => VehicleStatus::Available,
         ]);
 
-        return $vehicle;
+        return $vehicle->refresh();
     }
 }

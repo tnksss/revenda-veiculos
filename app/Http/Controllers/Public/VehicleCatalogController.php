@@ -20,7 +20,7 @@ class VehicleCatalogController extends Controller
 
         $query = Vehicle::query()
             ->publiclyVisible()
-            ->with('coverPhoto');
+            ->with('media');
 
         if (! empty($filters['q'])) {
             $term = mb_strtolower(trim((string) $filters['q']));
@@ -68,13 +68,13 @@ class VehicleCatalogController extends Controller
     {
         $vehicle = Vehicle::query()
             ->publiclyVisible()
-            ->with(['photos' => fn ($query) => $query->orderBy('sort_order')])
+            ->with(['media'])
             ->where('slug', $slug)
             ->firstOrFail();
 
         $relatedVehicles = Vehicle::query()
             ->publiclyVisible()
-            ->with('coverPhoto')
+            ->with('media')
             ->where('id', '!=', $vehicle->id)
             ->orderByDesc('is_featured')
             ->limit(3)

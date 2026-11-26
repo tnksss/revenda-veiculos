@@ -13,24 +13,52 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Spatie\Image\Enums\AlignPosition;
+use Spatie\Image\Enums\Fit;
+use Spatie\Image\Enums\Unit;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
- * @property VehicleStatus $status
- * @property FuelType $fuel_type
- * @property TransmissionType $transmission
- * @property bool $is_featured
- * @property string $plate
+ * @property int $id
+ * @property string $brand
+ * @property string $model
+ * @property string $version
+ * @property string $slug
+ * @property int $year_manufacture
+ * @property int $year_model
+ * @property int $mileage
+ * @property string $price
+ * @property string|null $cost_price
+ * @property string|null $plate
  * @property-read string $plate_ending
- * @property-read string $full_title
+ * @property-read string|null $cover_url
+ * @property string $color
+ * @property TransmissionType $transmission
+ * @property FuelType $fuel_type
+ * @property VehicleStatus $status
+ * @property bool $is_featured
+ * @property string|null $description
+ * @property array<int, string>|null $features
+ * @property string|null $internal_notes
+ * @property int|null $created_by
+ * @property Carbon|null $sold_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 #[ObservedBy([VehicleObserver::class])]
-class Vehicle extends Model
+class Vehicle extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
+    use InteractsWithMedia;
+    use SoftDeletes;
 
     protected $fillable = [
         'brand',
@@ -39,18 +67,20 @@ class Vehicle extends Model
         'slug',
         'year_manufacture',
         'year_model',
+        'mileage',
         'price',
         'cost_price',
-        'mileage',
         'plate',
-        'fuel_type',
-        'transmission',
         'color',
+        'transmission',
+        'fuel_type',
         'status',
         'is_featured',
-        'features',
         'description',
+        'features',
         'internal_notes',
+        'created_by',
+        'sold_at',
     ];
 
     protected $hidden = [
@@ -64,56 +94,102 @@ class Vehicle extends Model
         return [
             'year_manufacture' => 'integer',
             'year_model' => 'integer',
+            'mileage' => 'integer',
             'price' => 'decimal:2',
             'cost_price' => 'decimal:2',
-            'mileage' => 'integer',
-            'fuel_type' => FuelType::class,
-            'transmission' => TransmissionType::class,
-            'status' => VehicleStatus::class,
             'is_featured' => 'boolean',
             'features' => 'array',
+            'transmission' => TransmissionType::class,
+            'fuel_type' => FuelType::class,
+            'status' => VehicleStatus::class,
+            'sold_at' => 'datetime',
         ];
     }
 
     protected static function booted(): void
     {
         static::creating(function (Vehicle $vehicle): void {
-            $vehicle->plate = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $vehicle->plate));
-
             if (empty($vehicle->slug)) {
-                $baseSlug = Str::slug("{$vehicle->brand}-{$vehicle->model}-{$vehicle->version}-{$vehicle->year_model}");
-                $vehicle->slug = "{$baseSlug}-".Str::lower(Str::random(5));
+                $baseSlug = Str::slug("{$vehicle->brand} {$vehicle->model} {$vehicle->version} {$vehicle->year_model}");
+                $vehicle->slug = "{$baseSlug}-".strtolower(Str::random(6));
             }
         });
     }
 
+    protected function plate(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => $value !== null
+                ? strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $value))
+                : null,
+        );
+    }
+
     protected function plateEnding(): Attribute
     {
-        return Attribute::get(
-            fn (): string => substr((string) $this->plate, -1)
+        return Attribute::make(
+            get: fn (): string => $this->plate !== null && $this->plate !== ''
+                ? substr($this->plate, -1)
+                : '*',
         );
     }
 
-    protected function fullTitle(): Attribute
+    public function registerMediaCollections(): void
     {
-        return Attribute::get(
-            fn (): string => "{$this->brand} {$this->model} {$this->version}"
-        );
+        $this->addMediaCollection('gallery')
+            ->useDisk('public')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
     }
 
-    public function photos(): HasMany
+    public function registerMediaConversions(?Media $media = null): void
     {
-        return $this->hasMany(VehiclePhoto::class)->orderBy('sort_order');
+        $this->addMediaConversion('thumb')
+            ->nonQueued()
+            ->fit(Fit::Crop, 480, 300)
+            ->format('webp');
+
+        $large = $this->addMediaConversion('large')
+            ->nonQueued();
+
+        $large->fit(Fit::Max, 1280, 800)
+            ->format('webp');
+
+        $watermarkPath = public_path('images/watermark.png');
+
+        if (file_exists($watermarkPath)) {
+            $large->watermark(
+                watermarkImage: $watermarkPath,
+                position: AlignPosition::BottomRight,
+                paddingX: 24,
+                paddingY: 24,
+                paddingUnit: Unit::Pixel,
+                width: 22,
+                widthUnit: Unit::Percent,
+                alpha: 85,
+            );
+        }
     }
 
-    public function coverPhoto(): HasOne
+    public function getCoverUrlAttribute(): ?string
     {
-        return $this->hasOne(VehiclePhoto::class)->orderBy('sort_order');
+        $url = $this->getFirstMediaUrl('gallery', 'thumb');
+
+        return $url !== '' ? $url : null;
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function logs(): HasMany
     {
-        return $this->hasMany(VehicleLog::class)->latest('created_at');
+        return $this->hasMany(VehicleLog::class)->latest();
+    }
+
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
     }
 
     public function scopePubliclyVisible(Builder $query): Builder
@@ -122,10 +198,5 @@ class Vehicle extends Model
             VehicleStatus::Available->value,
             VehicleStatus::Reserved->value,
         ]);
-    }
-
-    public function leads(): HasMany
-    {
-        return $this->hasMany(Lead::class);
     }
 }

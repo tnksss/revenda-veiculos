@@ -4,101 +4,67 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\VehicleStatus;
 use App\Models\Vehicle;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class VehicleSeeder extends Seeder
 {
     public function run(): void
     {
-        Storage::disk('public')->makeDirectory('vehicles');
-
         $vehicles = Vehicle::factory()
-            ->count(10)
+            ->count(8)
             ->available()
             ->create();
 
-        $reservedVehicles = Vehicle::factory()
-            ->count(2)
-            ->reserved()
-            ->create();
+        $vehicles->take(3)->each(fn (Vehicle $vehicle) => $vehicle->update(['is_featured' => true]));
 
-        $preparationVehicles = Vehicle::factory()
-            ->count(3)
-            ->preparation()
-            ->create();
+        Vehicle::factory()->count(2)->create(['status' => VehicleStatus::Reserved]);
+        Vehicle::factory()->count(2)->create(['status' => VehicleStatus::Preparation]);
+        Vehicle::factory()->count(2)->sold()->create();
 
-        foreach ($vehicles->concat($reservedVehicles) as $vehicle) {
-            $this->attachSamplePhotos($vehicle, 3);
-        }
+        Vehicle::all()->each(function (Vehicle $vehicle): void {
+            for ($i = 1; $i <= 4; $i++) {
+                $tempPath = $this->createFakeCarPhoto(
+                    "{$vehicle->brand} {$vehicle->model} ({$vehicle->year_model}) - Foto {$i}",
+                    $i
+                );
 
-        // Veículos em preparação ficam com apenas 1 foto para testar a trava de publicação
-        foreach ($preparationVehicles as $vehicle) {
-            $this->attachSamplePhotos($vehicle, 1);
-        }
+                $vehicle->addMedia($tempPath)
+                    ->usingFileName("{$vehicle->slug}-{$i}.jpg")
+                    ->toMediaCollection('gallery');
+            }
+        });
     }
 
-    private function attachSamplePhotos(Vehicle $vehicle, int $count): void
-    {
-        $angles = ['Frente / Lateral', 'Interior / Bancos', 'Painel / Multimídia'];
-        $palettes = [
-            [30, 41, 59],   // Slate 800
-            [15, 23, 42],   // Slate 900
-            [51, 65, 85],   // Slate 700
-        ];
-
-        for ($i = 0; $i < $count; $i++) {
-            $filename = 'vehicles/'.Str::uuid().'.jpg';
-            $label = "{$vehicle->brand} {$vehicle->model} ({$vehicle->year_model}) - ".($angles[$i] ?? 'Foto '.($i + 1));
-            $rgb = $palettes[$i % count($palettes)];
-
-            $this->generatePlaceholderImage($filename, $label, $rgb);
-
-            $vehicle->photos()->create([
-                'path' => $filename,
-                'is_cover' => $i === 0,
-                'sort_order' => $i,
-            ]);
-        }
-    }
-
-    /**
-     * @param  array{0: int, 1: int, 2: int}  $bgRgb
-     */
-    private function generatePlaceholderImage(string $storagePath, string $text, array $bgRgb): void
+    private function createFakeCarPhoto(string $label, int $index): string
     {
         $width = 1280;
         $height = 800;
-        $image = imagecreatetruecolor($width, $height);
+        $img = imagecreatetruecolor($width, $height);
 
-        if ($image === false) {
-            return;
-        }
+        $palettes = [
+            [15, 23, 42],
+            [30, 41, 59],
+            [24, 24, 27],
+            [17, 24, 39],
+        ];
 
-        $bgColor = imagecolorallocate($image, $bgRgb[0], $bgRgb[1], $bgRgb[2]);
-        $accentColor = imagecolorallocate($image, 245, 158, 11); // Amber 500
-        $textColor = imagecolorallocate($image, 248, 250, 252); // Slate 50
+        [$r, $g, $b] = $palettes[($index - 1) % count($palettes)];
+        $bg = imagecolorallocate($img, $r, $g, $b);
+        imagefill($img, 0, 0, $bg);
 
-        if ($bgColor !== false) {
-            imagefill($image, 0, 0, $bgColor);
-        }
+        $accent = imagecolorallocate($img, 245, 158, 11);
+        $textColor = imagecolorallocate($img, 248, 250, 252);
 
-        if ($accentColor !== false) {
-            imagefilledrectangle($image, 0, $height - 16, $width, $height, $accentColor);
-        }
+        imagefilledrectangle($img, 80, 340, 1200, 346, $accent);
+        imagestring($img, 5, 80, 300, strtoupper($label), $textColor);
+        imagestring($img, 4, 80, 370, 'AUTO PRIME SEMINOVOS - ESTOQUE DEMONSTRACAO', $accent);
 
-        if ($textColor !== false) {
-            imagestring($image, 5, 60, (int) ($height / 2) - 20, 'AUTOPRIME SEMINOVOS', $accentColor ?: $textColor);
-            imagestring($image, 5, 60, (int) ($height / 2) + 15, mb_convert_encoding($text, 'ISO-8859-1', 'UTF-8'), $textColor);
-        }
+        $tempPath = tempnam(sys_get_temp_dir(), 'car_').'.jpg';
+        imagejpeg($img, $tempPath, 88);
+        imagedestroy($img);
 
-        ob_start();
-        imagejpeg($image, null, 85);
-        $binary = (string) ob_get_clean();
-        imagedestroy($image);
-
-        Storage::disk('public')->put($storagePath, $binary);
+        return $tempPath;
     }
 }

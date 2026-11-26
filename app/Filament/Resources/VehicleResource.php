@@ -11,10 +11,11 @@ use App\Enums\VehicleStatus;
 use App\Filament\Resources\VehicleResource\Pages;
 use App\Models\Vehicle;
 use Filament\Forms;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -124,14 +125,9 @@ class VehicleResource extends Resource
                                             ->native(false)
                                             ->live()
                                             ->rules([
-                                                fn (Get $get): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
-                                                    $statusValue = $value instanceof VehicleStatus ? $value->value : $value;
-
-                                                    if ($statusValue === VehicleStatus::Available->value) {
-                                                        $photos = $get('photos') ?? [];
-                                                        if (count($photos) < 3) {
-                                                            $fail('Para publicar o veículo como Disponível, adicione pelo menos 3 fotos na aba Galeria.');
-                                                        }
+                                                fn (Forms\Get $get): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
+                                                    if ($value === VehicleStatus::Available->value && count($get('gallery') ?? []) < 3) {
+                                                        $fail('Para publicar o veículo como Disponível, adicione pelo menos 3 fotos na aba Galeria de Fotos.');
                                                     }
                                                 },
                                             ]),
@@ -146,30 +142,20 @@ class VehicleResource extends Resource
 
                         Forms\Components\Tabs\Tab::make('Galeria de Fotos')
                             ->icon('heroicon-o-photo')
-                            ->badge(fn (Get $get): int => count($get('photos') ?? []))
                             ->schema([
-                                Forms\Components\Repeater::make('photos')
-                                    ->label('Fotos do Veículo (arraste para definir a ordem; a primeira será a capa)')
-                                    ->relationship()
-                                    ->orderColumn('sort_order')
-                                    ->reorderableWithButtons()
-                                    ->grid(3)
-                                    ->defaultItems(0)
-                                    ->addActionLabel('Adicionar Foto')
-                                    ->schema([
-                                        Forms\Components\FileUpload::make('path')
-                                            ->label('Imagem')
-                                            ->image()
-                                            ->disk('public')
-                                            ->directory('vehicles')
-                                            ->imageEditor()
-                                            ->maxSize(5120)
-                                            ->required(),
-
-                                        Forms\Components\Toggle::make('is_cover')
-                                            ->label('Foto de Capa')
-                                            ->default(false),
-                                    ]),
+                                SpatieMediaLibraryFileUpload::make('gallery')
+                                    ->label('Fotos do Veículo (selecione várias de uma vez)')
+                                    ->collection('gallery')
+                                    ->multiple()
+                                    ->reorderable()
+                                    ->appendFiles()
+                                    ->image()
+                                    ->maxSize(10240)
+                                    ->maxFiles(20)
+                                    ->imageEditor()
+                                    ->panelLayout('grid')
+                                    ->helperText('Selecione várias imagens simultaneamente. Arraste para definir a ordem: a primeira foto será a capa. A marca d\'água é aplicada automaticamente.')
+                                    ->columnSpanFull(),
                             ]),
 
                         Forms\Components\Tabs\Tab::make('Opcionais e Descrição')
@@ -240,11 +226,12 @@ class VehicleResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                Tables\Columns\ImageColumn::make('coverPhoto.path')
+                SpatieMediaLibraryImageColumn::make('gallery')
                     ->label('Capa')
-                    ->disk('public')
-                    ->circular()
-                    ->defaultImageUrl(url('/images/car-placeholder.png')),
+                    ->collection('gallery')
+                    ->conversion('thumb')
+                    ->limit(1)
+                    ->square(),
 
                 Tables\Columns\TextColumn::make('brand')
                     ->label('Veículo')
