@@ -66,7 +66,7 @@ class Lead extends Model
             ? "{$this->vehicle->brand} {$this->vehicle->model}"
             : 'nossos veículos';
 
-        $text = urlencode("Olá {$this->name}! Recebemos sua proposta referente ao {$vehicleTitle} na AutoPrime Seminovos.");
+        $text = urlencode("Olá {$this->name}! Recebemos sua proposta referente ao {$vehicleTitle} na Tobias Veículos.");
 
         return "https://wa.me/{$digits}?text={$text}";
     }

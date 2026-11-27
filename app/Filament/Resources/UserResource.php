@@ -49,6 +49,13 @@ class UserResource extends Resource
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
 
+                        Forms\Components\TextInput::make('phone')
+                            ->label('WhatsApp')
+                            ->tel()
+                            ->maxLength(25)
+                            ->placeholder('(42) 99999-9999')
+                            ->helperText('Usado para enviar os dados dos leads atribuídos a este consultor.'),
+
                         Forms\Components\Select::make('role')
                             ->label('Perfil de Acesso')
                             ->options(UserRole::class)
@@ -89,6 +96,11 @@ class UserResource extends Resource
                     ->label('E-mail')
                     ->searchable()
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('phone')
+                    ->label('WhatsApp')
+                    ->searchable()
+                    ->placeholder('Não informado'),
 
                 Tables\Columns\TextColumn::make('role')
                     ->label('Perfil')

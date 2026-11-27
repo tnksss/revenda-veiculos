@@ -9,6 +9,7 @@ use App\Enums\LeadStatus;
 use App\Filament\Resources\LeadResource\Pages;
 use App\Models\Lead;
 use App\Models\User;
+use App\Support\StoreContact;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -207,8 +208,25 @@ class LeadResource extends Resource
                             ->send();
                     }),
 
+                Tables\Actions\Action::make('notifyAssigneeWhatsapp')
+                    ->label('Avisar Consultor')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('warning')
+                    ->visible(function (Lead $record): bool {
+                        /** @var User|null $assignee */
+                        $assignee = $record->assignedUser;
+
+                        return $assignee !== null && filled($assignee->phone);
+                    })
+                    ->url(function (Lead $record): string {
+                        /** @var User $assignee */
+                        $assignee = $record->assignedUser;
+
+                        return StoreContact::leadAssignmentWhatsappUrl($record, $assignee) ?? '#';
+                    }, shouldOpenInNewTab: true),
+
                 Tables\Actions\Action::make('whatsapp')
-                    ->label('WhatsApp')
+                    ->label('WhatsApp Cliente')
                     ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
                     ->color('success')
                     ->url(fn (Lead $record): string => $record->whatsapp_url, shouldOpenInNewTab: true),
@@ -225,14 +243,6 @@ class LeadResource extends Resource
                             return $user?->isAdmin() ?? false;
                         }),
                 ]),
-            ])
-            ->headerActions([
-                Tables\Actions\Action::make('exportCsv')
-                    ->label('Exportar CSV')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('gray')
-                    ->action(fn (Tables\Contracts\HasTable $livewire) => app(ExportLeadsCsvAction::class)
-                        ->execute($livewire->getFilteredTableQuery())),
             ]);
     }
 

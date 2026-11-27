@@ -7,6 +7,7 @@ use App\Enums\VehicleStatus;
 use App\Models\Lead;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Support\StoreContact;
 use Illuminate\Support\Facades\DB;
 
 test('novo lead cadastrado na vitrine envia notificacao interna para usuarios ativos e ignora inativos', function () {
@@ -72,4 +73,42 @@ test('atribuir responsavel a um lead envia notificacao apenas para o consultor d
 
     expect($notificationData['title'])->toBe('Você foi definido como responsável por um lead')
         ->and($notificationData['body'])->toContain('Fernanda Lima', 'Toyota Corolla (2022)');
+});
+
+test('gera url de whatsapp formatada com os dados do lead para o consultor responsavel', function () {
+    $seller = User::factory()->create([
+        'name' => 'Marcos Oliveira',
+        'phone' => '(42) 99123-4567',
+        'role' => UserRole::Seller,
+        'is_active' => true,
+    ]);
+
+    $vehicle = Vehicle::factory()->create([
+        'brand' => 'Volkswagen',
+        'model' => 'T-Cross',
+        'year_model' => 2024,
+        'status' => VehicleStatus::Available,
+    ]);
+
+    $lead = Lead::factory()->create([
+        'vehicle_id' => $vehicle->id,
+        'assigned_to' => $seller->id,
+        'name' => 'Patrícia Souza',
+        'phone' => '42988001122',
+        'wants_financing' => true,
+        'has_trade_in' => true,
+    ]);
+
+    $url = StoreContact::leadAssignmentWhatsappUrl($lead, $seller);
+
+    expect($url)->not->toBeNull()
+        ->and($url)->toStartWith('https://wa.me/5542991234567?text=')
+        ->and(rawurldecode((string) $url))->toContain(
+            'Marcos Oliveira',
+            'Patrícia Souza',
+            '42988001122',
+            'Volkswagen T-Cross (2024)',
+            'Financiamento',
+            'Troca'
+        );
 });

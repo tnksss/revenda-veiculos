@@ -7,6 +7,7 @@ namespace App\Observers;
 use App\Filament\Resources\LeadResource;
 use App\Models\Lead;
 use App\Models\User;
+use App\Support\StoreContact;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification;
 
@@ -65,6 +66,34 @@ class LeadObserver
 
         if ($assignee === null || ! $assignee->is_active) {
             return;
+        }
+
+        $whatsappUrl = StoreContact::leadAssignmentWhatsappUrl($lead, $assignee);
+
+        if (auth()->check() && auth()->id() !== $assignee->id) {
+            if ($whatsappUrl !== null) {
+                Notification::make()
+                    ->title("Lead atribuído para {$assignee->name}")
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->success()
+                    ->persistent()
+                    ->body('Clique abaixo para enviar os dados deste lead no WhatsApp do consultor.')
+                    ->actions([
+                        Action::make('sendWhatsapp')
+                            ->label("Avisar {$assignee->name} no WhatsApp")
+                            ->url($whatsappUrl)
+                            ->openUrlInNewTab()
+                            ->button()
+                            ->close(),
+                    ])
+                    ->send();
+            } else {
+                Notification::make()
+                    ->title("Lead atribuído para {$assignee->name}")
+                    ->warning()
+                    ->body('Cadastre o WhatsApp deste consultor em Equipe & Usuários para habilitar o envio rápido.')
+                    ->send();
+            }
         }
 
         if (auth()->id() === $assignee->id) {
