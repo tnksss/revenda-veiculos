@@ -206,7 +206,7 @@ class Vehicle extends Model implements HasMedia
 
     public function recordMinimumPriceConsultation(?User $user, ?string $context = null): void
     {
-        $consultor = $user?->name ?? 'Usuário';
+        $consultor = $user !== null ? $user->name : 'Usuário';
         $formattedMin = $this->minimum_price !== null
             ? 'R$ '.number_format((float) $this->minimum_price, 2, ',', '.')
             : 'sem piso cadastrado';
