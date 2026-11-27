@@ -28,6 +28,8 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('Tobias Veículos')
             ->path('admin')
             ->login()
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
             ->colors([
                 'primary' => Color::Amber,
             ])
