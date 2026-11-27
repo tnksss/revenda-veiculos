@@ -33,10 +33,35 @@
         @yield('content')
     </main>
 
-    <footer class="bg-slate-900 text-slate-400 mt-16 border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-            <p>&copy; {{ date('Y') }} TOBIAS VEÍCULOS. Todos os direitos reservados.</p>
-            <p class="text-xs text-slate-500">Veículos periciados com procedência garantida.</p>
+        <footer class="bg-slate-900 text-slate-400 mt-16 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
+            <div>
+                <div class="inline-flex items-center gap-1.5 font-black text-lg tracking-tight text-white">
+                    <span class="text-amber-400">TOBIAS</span> VEÍCULOS
+                </div>
+                <p class="mt-3 text-slate-400 leading-relaxed">
+                    Seminovos selecionados com procedência, perícia cautelar e transparência em cada negociação.
+                </p>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-white font-bold uppercase tracking-wider text-xs">Atendimento &amp; Localização</h3>
+                <p>{{ config('store.address') }}</p>
+                <p>{{ config('store.hours') }}</p>
+                <p class="text-slate-300 font-medium">Telefone: {{ config('store.phone') }}</p>
+            </div>
+
+            <div class="flex flex-col items-start md:items-end justify-between gap-4">
+                <a href="{{ \App\Support\StoreContact::whatsappUrl('Olá! Vim pelo site da Tobias Veículos e gostaria de atendimento.') }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-5 py-2.5 rounded-xl transition">
+                    <span>Chamar no WhatsApp</span>
+                </a>
+                <p class="text-xs text-slate-500">
+                    &copy; {{ date('Y') }} {{ config('store.name') }}. Todos os direitos reservados.
+                </p>
+            </div>
         </div>
     </footer>
 </body>

@@ -232,7 +232,7 @@
                 </div>
 
                 <div class="mt-8 space-y-3">
-                    <a href="https://wa.me/5542999999999?text={{ $whatsappMessage }}"
+                    <a href="{{ \App\Support\StoreContact::whatsappUrl(urldecode($whatsappMessage)) }}"
                        target="_blank"
                        rel="noopener noreferrer"
                        class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-5 rounded-xl transition shadow-sm">

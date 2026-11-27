@@ -32,7 +32,7 @@
                 <div class="inline-flex items-center gap-1.5 border-2 border-slate-900 text-slate-900 px-3 py-1 rounded-md text-xs font-extrabold tracking-wider">
                     <span class="text-amber-600">TOBIAS</span> VEÍCULOS
                 </div>
-                <p class="text-xs text-slate-500 mt-1.5">Seminovos selecionados com procedência e garantia</p>
+                <p class="text-xs text-slate-600 mt-1.5">{{ config('store.address') }} • Tel/WhatsApp: <strong>{{ config('store.phone') }}</strong></p>
             </div>
             <div class="text-right">
                 <span class="text-xs uppercase tracking-wider text-slate-500 block">Final da Placa</span>
