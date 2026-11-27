@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\LeadResource\Pages;
 
+use App\Filament\Actions\ViewVehicleMinimumPriceAction;
 use App\Filament\Resources\LeadResource;
 use App\Models\Lead;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Support\StoreContact;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -18,6 +20,16 @@ class EditLead extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            ViewVehicleMinimumPriceAction::make(
+                resolveVehicle: function (): ?Vehicle {
+                    /** @var Lead $record */
+                    $record = $this->getRecord();
+
+                    return $record->vehicle;
+                },
+                context: 'Atendimento de Lead',
+            ),
+
             Actions\Action::make('notifyAssigneeWhatsapp')
                 ->label('Avisar Consultor no WhatsApp')
                 ->icon('heroicon-o-paper-airplane')

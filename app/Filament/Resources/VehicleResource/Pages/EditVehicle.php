@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\VehicleResource\Pages;
 
+use App\Filament\Actions\ViewVehicleMinimumPriceAction;
 use App\Filament\Resources\VehicleResource;
 use App\Models\Vehicle;
 use Filament\Actions;
@@ -16,6 +17,10 @@ class EditVehicle extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            ViewVehicleMinimumPriceAction::make(
+                resolveVehicle: fn (): ?Vehicle => $this->record instanceof Vehicle ? $this->record : null,
+                context: 'Ficha do Veículo',
+            ),
             Actions\DeleteAction::make(),
         ];
     }

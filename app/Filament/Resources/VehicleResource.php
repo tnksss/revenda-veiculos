@@ -213,6 +213,15 @@ class VehicleResource extends Resource
                                             ->step(0.01)
                                             ->visible(fn (): bool => auth()->user()?->isAdmin() ?? false),
 
+                                        Forms\Components\TextInput::make('minimum_price')
+                                            ->label('Piso de Negociação / Valor Mínimo (R$)')
+                                            ->numeric()
+                                            ->prefix('R$')
+                                            ->step(0.01)
+                                            ->lte('price')
+                                            ->helperText('Valor mínimo autorizado para os vendedores consultarem sob demanda (com registro de auditoria).')
+                                            ->visible(fn (): bool => auth()->user()?->isAdmin() ?? false),
+
                                         Forms\Components\Textarea::make('internal_notes')
                                             ->label('Observações Internas (Pátio / Reparos / Procedência)')
                                             ->rows(4)

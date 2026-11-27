@@ -35,6 +35,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property int $year_model
  * @property int $mileage
  * @property string $price
+ * @property string|null $minimum_price
  * @property string|null $cost_price
  * @property string|null $plate
  * @property-read string $plate_ending
@@ -69,6 +70,7 @@ class Vehicle extends Model implements HasMedia
         'year_model',
         'mileage',
         'price',
+        'minimum_price',
         'cost_price',
         'plate',
         'color',
@@ -86,6 +88,7 @@ class Vehicle extends Model implements HasMedia
     protected $hidden = [
         'plate',
         'cost_price',
+        'minimum_price',
         'internal_notes',
     ];
 
@@ -96,6 +99,7 @@ class Vehicle extends Model implements HasMedia
             'year_model' => 'integer',
             'mileage' => 'integer',
             'price' => 'decimal:2',
+            'minimum_price' => 'decimal:2',
             'cost_price' => 'decimal:2',
             'is_featured' => 'boolean',
             'features' => 'array',
@@ -197,6 +201,24 @@ class Vehicle extends Model implements HasMedia
         return $query->whereIn('status', [
             VehicleStatus::Available->value,
             VehicleStatus::Reserved->value,
+        ]);
+    }
+
+    public function recordMinimumPriceConsultation(?User $user, ?string $context = null): void
+    {
+        $consultor = $user?->name ?? 'Usuário';
+        $formattedMin = $this->minimum_price !== null
+            ? 'R$ '.number_format((float) $this->minimum_price, 2, ',', '.')
+            : 'sem piso cadastrado';
+
+        $suffix = $context !== null && $context !== '' ? " ({$context})" : '';
+
+        $this->logs()->create([
+            'user_id' => $user?->id,
+            'action' => 'minimum_price_consulted',
+            'new_value' => $formattedMin,
+            'notes' => "{$consultor} consultou o piso de negociação ({$formattedMin}){$suffix}.",
+            'created_at' => now(),
         ]);
     }
 }
